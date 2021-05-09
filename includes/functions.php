@@ -18,6 +18,7 @@ function validateRequest($request,$request_map){
 }
 
 function processRequest($ref,$data=[]){
+    
     $_class = new $ref($data["data"]);
     $request = $data["request"];
     toJson($_class->$request());

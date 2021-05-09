@@ -260,5 +260,142 @@ class DengueCaseController extends Database{
 
     }
 
+
+    public function getReportData(){
+        
+        $barangay       = $this->data['barangay'];
+        $customDateFrom = $this->data['customDateFrom'];
+        $customDateTo   = $this->data['customDateTo'];
+        $filterDateBy   = $this->data['filterDateBy'];
+
+
+        switch ($filterDateBy) {
+            case 'Day':
+                return $this->getDailyData(array(
+                    'barangay'       => $barangay,
+                    'customDateFrom' => $customDateFrom,
+                    'customDateTo'   => $customDateTo
+                ));
+
+            break;
+                
+            case 'Month':
+                return $this->getMonthlyData(array(
+                    'barangay'       => $barangay,
+                    'customDateFrom' => $customDateFrom,
+                    'customDateTo'   => $customDateTo
+                ));
+            break;
+                
+            case 'Year':
+                return $this->getYearlyData(array(
+                    'barangay'       => $barangay,
+                    'customDateFrom' => $customDateFrom,
+                    'customDateTo'   => $customDateTo
+                ));
+            break;
+            
+            default:
+                return $this->getDailyData(array(
+                    'barangay' => $barangay,
+                    'customDateFrom' => $customDateFrom,
+                    'customDateTo' => $customDateTo
+                ));
+            break;
+               
+        }
+
+    
+    }
+
+
+    public function getDailyData($filterData){
+
+        $filters = $this->reportFilters($filterData);
+
+        $query = "SELECT 
+                        SUM(total_cases)  AS 'TOTAL_CASES',
+                        SUM(total_deaths)  AS 'TOTAL_DEATHS',
+                        SUM(total_recoveries)  AS 'TOTAL_RECOVERIES',
+                        DATE_FORMAT(case_date,'%Y-%m-%d') AS 'DATES' 
+                    
+                    FROM dengue_cases ".$filters.' GROUP BY DATE_FORMAT(case_date,"%Y-%m-%d") ASC;';
+                   
+
+        return $this->setquery($query)->get();
+
+
+
+    }
+
+    public function getMonthlyData($filterData){
+
+        $filters = $this->reportFilters($filterData);
+
+
+        $query = "SELECT 
+                    SUM(total_cases)  AS 'TOTAL_CASES',
+                    SUM(total_deaths)  AS 'TOTAL_DEATHS',
+                    SUM(total_recoveries)  AS 'TOTAL_RECOVERIES',
+                    DATE_FORMAT(case_date,'%Y-%m') AS 'DATES' 
+            
+                FROM dengue_cases ".$filters.' GROUP BY DATE_FORMAT(case_date,"%Y-%m") ASC;';
+
+     
+
+        return $this->setquery($query)->get();
+
+    }
+
+    public function getYearlyData($filterData){
+
+        $filters = $this->reportFilters($filterData);
+
+
+        $query = "SELECT 
+                    SUM(total_cases)  AS 'TOTAL_CASES',
+                    SUM(total_deaths)  AS 'TOTAL_DEATHS',
+                    SUM(total_recoveries)  AS 'TOTAL_RECOVERIES',
+                    DATE_FORMAT(case_date,'%Y') AS 'DATES' 
+            
+                    FROM dengue_cases ".$filters.' GROUP BY DATE_FORMAT(case_date,"%Y") ASC;';
+
+        return $this->setquery($query)->get();
+    }
+
+ 
+
+    public function reportFilters($filterData){
+
+
+        $whereClause = '';
+
+
+        if($filterData['barangay'] != null || ($filterData['customDateFrom'] != null AND  $filterData['customDateTo'] != null)){
+            $whereClause .= 'WHERE ';
+
+            $hasBarangay = false;
+
+            if($filterData['barangay'] != null){
+                $whereClause .='barangay_id = '.$filterData['barangay'].' ';
+                $hasBarangay = true;
+            }
+
+            if($filterData['customDateFrom'] != null AND  $filterData['customDateTo'] != null){
+                $whereClause .= $hasBarangay ? ' AND ' : '';
+                $whereClause .= "case_date BETWEEN '".$filterData['customDateFrom']."' AND '".$filterData['customDateTo']."' ";
+            }
+        }
+
+
+        return $whereClause;
+    }
+
+    
+
+
+    
+
+
     
 }

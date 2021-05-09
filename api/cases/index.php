@@ -36,10 +36,10 @@ switch ($request_type) {
     
     case 'GET':
 
-        $request_map = ['dashboardDatas','getYears','getRecords'];
+        $request_map = ['dashboardDatas','getYears','getRecords','getReportData'];
 
         if(!validateRequest($request,$request_map)) return;
-
+        
         processRequest(DengueCaseController::class,["data"=>$_GET,"request"=>$request]);
 
     break;
