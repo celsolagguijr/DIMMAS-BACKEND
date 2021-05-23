@@ -36,7 +36,7 @@ switch ($request_type) {
     
     case 'GET':
 
-        $request_map = ['show'];
+        $request_map = ['show','schedReport'];
 
         if(!validateRequest($request,$request_map)) return;
 

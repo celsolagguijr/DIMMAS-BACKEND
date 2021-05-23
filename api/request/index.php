@@ -36,7 +36,7 @@ switch ($request_type) {
     
     case 'GET':
 
-        $request_map = ['show','requestTypes'];
+        $request_map = ['show','requestTypes','requestReport'];
 
         if(!validateRequest($request,$request_map)) return;
 

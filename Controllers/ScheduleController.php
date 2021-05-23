@@ -227,6 +227,41 @@ class ScheduleController extends Database{
             ];
         }
     }
+
+
+    public function schedReport(){
+
+        $barangay_id = $this->data['barangay_id'];
+        $from = $this->data['from'];
+        $to = $this->data['to'];
+
+        $filterBarangay = $barangay_id != null ? ' sched_to.`barangay_id`= '.$barangay_id.' AND' : '';
+
+
+        $query = "SELECT
+                req_types.`name` AS 'SCHED_FOR',
+                barangay.`name` AS 'SCHED_TO',
+                sched_by.`name` AS 'SCHED_BY',
+                sched.`remarks` AS 'REMARKS',
+                sched.`isDone` AS 'STATUS',
+                DATE_FORMAT(sched.`schedule`, '%M %d, %Y @ %h:%i %p') AS 'SCHEDULED_DATE'
+                
+            
+            FROM schedules sched
+                LEFT JOIN request_types AS req_types
+                    ON(sched.`schedule_for` = req_types.`id`)
+                LEFT JOIN users sched_to
+                    ON(sched.`schedule_to` = sched_to.`id`)
+                LEFT JOIN users sched_by
+                    ON(sched.`schedule_by` = sched_by.`id`)
+                LEFT JOIN barangays barangay
+                    ON(sched_to.`barangay_id` = barangay.`id`)
+                    WHERE $filterBarangay DATE_FORMAT(sched.`schedule`, '%Y-%m-%d') BETWEEN '$from' AND '$to' AND sched.`deleted_at` IS NULL";
+
+
+        return $this->setquery($query)->get();    
+
+    }
 }
 
 ?>

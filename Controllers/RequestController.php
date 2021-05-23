@@ -29,7 +29,8 @@ class RequestController extends Database {
                         DATE_FORMAT(r.scheduled_date,'%M %d, %Y @ %h:%i %p') AS 'DATE_SCHEDULE',
                         DATE_FORMAT(r.scheduled_date,'%Y-%m-%d') AS 'FORMAT_DATE_SCHED',
                         DATE_FORMAT(r.scheduled_date,'%H:%i') AS 'FORMAT_TIME_SCHED',
-                        DATE_FORMAT(r.created_at,'%M %d, %Y') AS 'DATE_CREATED'
+                        DATE_FORMAT(r.created_at,'%M %d, %Y') AS 'DATE_CREATED',
+                        r.scheduled_date AS 'RAW_SCHEDULE'
                     
                     FROM requests r
                     
@@ -39,9 +40,38 @@ class RequestController extends Database {
                             ON(r.`request_type_id` = rt.`id`)
                         LEFT JOIN barangays b
                             ON(u.`barangay_id` = b.`id`)
-                                WHERE r.`isApproved` = 0 AND r.deleted_at IS NULL".$whereClause;
+                                WHERE r.`isApproved` = 0 AND r.`is_expired` IS NULL AND r.deleted_at IS NULL".$whereClause;
 
-        return $this->setquery($query)->get();
+        $requests =  $this->setquery($query)->get();
+
+        $valiRequests = [];
+        date_default_timezone_set('Asia/Manila');
+        $dateTime = date('Y-m-d H:i:s');
+
+
+        foreach ($requests as $request) {
+            $requestDateTime = strtotime($request->RAW_SCHEDULE);
+            $dateTimeNow = strtotime("now");
+
+            if($requestDateTime < $dateTimeNow) {
+                
+                $query = $this->update([
+                    'is_expired' => $dateTime,
+                    'updated_at' => $dateTime
+                ],$this->table, $request->id);
+
+                $this->setquery($query)->save();
+                continue;
+            }
+
+            $valiRequests[] = $request;
+
+
+        }
+
+
+        return $valiRequests;
+        
 
 
     }
@@ -197,6 +227,37 @@ class RequestController extends Database {
 
     public function requestTypes(){
         return $this->setquery("SELECT * FROM request_types")->get();
+    }
+
+    public function requestReport(){
+
+        $barangay_id = $this->data['barangay_id'];
+        $from = $this->data['from'];
+        $to = $this->data['to'];
+
+        $filterBarangay = $barangay_id != null ? ' u.barangay_id = '.$barangay_id.' AND' : '';
+
+
+        $query = "SELECT
+                        req_types.`name` AS 'request_type',
+                        barangay.`name` AS 'requested_by',
+                        req.`isApproved` AS 'request_status',
+                        req.`is_expired` AS 'expired_date',
+                        req.`remarks` AS 'remarks',
+                        DATE_FORMAT(req.`scheduled_date`, '%M %d, %Y @ %h:%i %p') AS 'scheduled_date'
+                        
+                        
+                    FROM requests req
+                    
+                        LEFT JOIN request_types req_types
+                            ON(req.`request_type_id` = req_types.`id`)
+                        LEFT JOIN users u
+                            ON(req.`user_id` = u.`id`)
+                        LEFT JOIN barangays barangay
+                            ON(u.`barangay_id` = barangay.id)
+                                
+                                WHERE $filterBarangay DATE_FORMAT(req.`scheduled_date`, '%Y-%m-%d') BETWEEN '$from' AND '$to' AND req.`deleted_at` IS NULL";
+        return $this->setquery($query)->get();
     }
 
 }

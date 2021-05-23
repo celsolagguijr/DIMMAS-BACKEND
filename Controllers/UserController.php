@@ -14,6 +14,7 @@ class UserController extends Database{
 
 
     public function auth(){
+         
 
         $username = $this->filterData($this->data['username']);
         $password = $this->filterData($this->data['password']);
@@ -62,6 +63,7 @@ class UserController extends Database{
         ];
 
     }
+
 
 
     public function create(){
@@ -157,7 +159,7 @@ class UserController extends Database{
         $oldPassword = $this->setquery("SELECT `password` from users WHERE id=".$this->data['id'])
                             ->getField("password");
 
-        if(!password_verify($this->oldPassword,$oldPassword)) return [
+        if(!password_verify($this->data['oldPassword'],$oldPassword)) return [
             "status"    => 401,
             "message"   => "Incorrect Password!"
         ];
@@ -168,14 +170,14 @@ class UserController extends Database{
         ];
 
         $query = $this->update([
-            'password'   => password_hash($this->data['password'], PASSWORD_BCRYPT, $options),
+            'password'   => password_hash($this->data['newPassword'], PASSWORD_BCRYPT, $options),
             'updated_at' => $dateTime
         ],"users", $this->data['id']);
 
 
         if($this->setquery($query)->save()){
             return [
-                "status" => 200,
+                "status" => 201,
                 "message" => "Successfully Changed!"
             ];
        }
